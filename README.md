@@ -23,7 +23,7 @@ This project implements a Retrieval-Augmented Generation (RAG) pipeline for audi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Audio-to-RAG-POC.git
+   git clone https://github.com/TheBearguy/Audio-to-RAG-POC.git
    cd Audio-to-RAG-POC
    ```
 
