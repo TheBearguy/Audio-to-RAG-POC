@@ -21,7 +21,7 @@ def create_and_store_embeddings(
         mongo_uri (str): The URI of the MongoDB server.
 
     Returns:
-        int: The number of documents successfully inserted into the database.generates embeddings for each utterance,
+        int: The number of documents successfully inserted into the database.
     """
     # 1. transcribe the audio to get the speaker  separated utterances (text)
     speaker_utterances = transcribe_with_speakers(audio_path)

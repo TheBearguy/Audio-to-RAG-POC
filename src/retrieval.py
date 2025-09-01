@@ -1,4 +1,3 @@
-from re import search
 from typing import List
 from pymongo.operations import SearchIndexModel
 from pymongo import MongoClient
@@ -9,7 +8,7 @@ import voyageai
 def create_mongo_vector_index(
     collection: Collection, 
     index_name: str = "vector_search_index", 
-    num_dimensions: int = 1536 
+    num_dimensions: int = 1024 
 ): 
     """
     Creates a vector search index in a mongodb collection. 
@@ -41,7 +40,7 @@ def create_mongo_vector_index(
         print("Index created successfully")
     except Exception as e: 
         # This can happen if the index already exists. 
-        print(f"An error occured in creating the index.. Or The index may already exist: {e}")
+        print(f"An error occurred in creating the index.. Or The index may already exist: {e}")
 
 
 def perform_vector_search(
@@ -67,7 +66,7 @@ def perform_vector_search(
     query_embedding = vo.embed(
         texts=[query], 
         model="voyage-context-3", 
-        input_type="query" # User "query" for better seaarch performance. 
+        input_type="query" # Use "query" for better search performance.
     ).embeddings[0]
 
     # 2. Perform the vector search using an aggregation pipeline: 
@@ -78,7 +77,7 @@ def perform_vector_search(
                     "index": index_name, 
                     "queryVector": query_embedding, 
                     "path": "embedding", 
-                    "numCandidates": 100, # Nummber of candidates to consider,
+                    "numCandidates": 100, # Number of candidates to consider,
                     "limit": top_k
                 }
             },
