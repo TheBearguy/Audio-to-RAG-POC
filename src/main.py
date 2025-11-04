@@ -35,26 +35,26 @@ def test_pipeline():
     print("1. Checking environment variables...")
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
-        print("❌ Error: MONGO_URI environment variable not set")
+        print("Error: MONGO_URI environment variable not set")
         return False
     else:
-        print("✅ MONGO_URI is set")
+        print("MONGO_URI is set")
     
     # Check VoyageAI API key
     voyage_api_key = os.getenv("VOYAGE_API_KEY")
     if not voyage_api_key:
-        print("❌ Warning: VOYAGE_API_KEY environment variable not set")
+        print("Warning: VOYAGE_API_KEY environment variable not set")
         print("   This may cause issues with embedding generation")
     else:
-        print("✅ VOYAGE_API_KEY is set")
+        print("VOYAGE_API_KEY is set")
     
     # Check AssemblyAI API key
     aai_api_key = os.getenv("ASSEMBLYAI_API_KEY")
     if not aai_api_key:
-        print("❌ Warning: ASSEMBLYAI_API_KEY environment variable not set")
+        print("Warning: ASSEMBLYAI_API_KEY environment variable not set")
         print("   This may cause issues with audio transcription")
     else:
-        print("✅ ASSEMBLYAI_API_KEY is set")
+        print("ASSEMBLYAI_API_KEY is set")
     
     print("\n2. Testing MongoDB connection...")
     try:
@@ -69,7 +69,7 @@ def test_pipeline():
         # Test the connection
         print("   Attempting to connect to MongoDB Atlas...")
         server_info = client.server_info()
-        print(f"✅ MongoDB connection successful (version: {server_info.get('version', 'unknown')})")
+        print(f"MongoDB connection successful (version: {server_info.get('version', 'unknown')})")
         
         # Test collection access
         db = client["voyage"]
@@ -78,13 +78,13 @@ def test_pipeline():
         # Try to get collection stats (this will test authentication)
         try:
             stats = db.command("collStats", "voyage_embeddings")
-            print(f"✅ Database and collection accessible (documents: {stats.get('count', 0)})")
+            print(f"Database and collection accessible (documents: {stats.get('count', 0)})")
         except Exception:
             # Collection might not exist yet, which is fine
-            print("✅ Database accessible (collection will be created when needed)")
+            print("Database accessible (collection will be created when needed)")
         
     except Exception as e:
-        print(f"❌ Error connecting to MongoDB: {e}")
+        print(f"Error connecting to MongoDB: {e}")
         print(f"   Connection string (masked): {mongo_uri.split('@')[1] if '@' in mongo_uri else 'Invalid format'}")
         print("   Possible issues:")
         print("   - Network connectivity problem")
@@ -171,8 +171,32 @@ def main():
     """
     Main entry point for the application.
     """
-    if len(sys.argv) > 1 and sys.argv[1] == "--demo":
-        demo_usage()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--demo":
+            demo_usage()
+        elif sys.argv[1] == "--audio":
+            print("🎙️ Starting Audio RAG Interface...")
+            try:
+                from audio_rag_interface import main as audio_main
+                audio_main()
+            except ImportError as e:
+                print(f"❌ Audio RAG not available: {e}")
+                print("   Make sure audio dependencies are installed")
+        elif sys.argv[1] == "--setup":
+            print("🔧 Running setup check...")
+            try:
+                import sys
+                sys.path.append('..')
+                from setup_audio_rag import main as setup_main
+                setup_main()
+            except ImportError as e:
+                print(f"❌ Setup script not available: {e}")
+        else:
+            print("Usage:")
+            print("  python src/main.py           # Test pipeline")
+            print("  python src/main.py --demo    # Show usage examples")
+            print("  python src/main.py --audio   # Start Audio RAG interface")
+            print("  python src/main.py --setup   # Run setup check")
     else:
         test_pipeline()
 
