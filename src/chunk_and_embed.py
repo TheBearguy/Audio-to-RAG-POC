@@ -30,7 +30,7 @@ def chunk_transcript(transcript_text, max_tokens=512, overlap=64):
 def embed(chunks):
     embed_model = SentenceTransformer(EMBED_MODEL)
     embeddings = embed_model.encode(chunks, convert_to_numpy=True)
-   return embeddings
+    return embeddings
 
 
 if __name__ == "__main__":

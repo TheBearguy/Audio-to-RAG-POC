@@ -3,7 +3,7 @@ from chromadb.config import Settings
 import numpy as np
 
 chroma_client = chromadb.PersistentClient(path="./chroma", settings=Settings())
-collection = chroma_client.create_collection(name="Voice Memory")
+collection = chroma_client.create_collection(name="voice_memory")
 
 chunks = list(np.load("data/chunks.npy", allow_pickle=True))
 embs = np.load("data/embs.npy")
