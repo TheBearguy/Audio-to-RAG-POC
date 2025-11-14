@@ -1,38 +1,62 @@
 from chromadb.config import Settings
-import openai
-import os
-from sentence_transformers import SentenceTransformers
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from sentence_transformers import SentenceTransformer
 import chromadb
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-EMBED_MODEL = "sentence-transformers/intfloat/e5-small"
+MODEL = "Qwen/Qwen2.5-3B-Instruct"
+EMBED_MODEL = "intfloat/e5-small"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-client = chromadb.PersistentClient(path="./chroma", settings=Settings())
+tokenizer = AutoTokenizer.from_pretrained(MODEL)
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL, torch_dtype=torch.float16 if DEVICE == "cuda" else torch.float32
+)
+embedder = SentenceTransformer(EMBED_MODEL)
 
-collection = client.get_collection("voice_memory")
-embedder = SentenceTransformers(EMBED_MODEL)
+chroma_client = chromadb.PersistentClient(path="./chroma", settings=Settings())
+
+collection = chroma_client.get_collection("voice_memory")
 
 
-def retrieve(query, k=5):
-    q_emb = embedder.encode([query])[0].tolist()
-    res = collection.query(query_images=[q_emb], n_results=k)
+def retrieve(query, k: int = 5):
+    q_emb = embedder.encode(query)
+    res = collection.query(query_embeddings=[q_emb], n_results=k)
     return res
 
 
-def ask_rag(query):
+def generate(prompt):
+    tokens = tokenizer.encode(prompt, return_tensors="pt").to(DEVICE)
+    response = model.generate(
+        **tokens, max_new_tokens=256, do_sample=False, temperature=0.0
+    )
+
+    return tokenizer.decode(response[0], skip_special_tokens=True)
+
+
+def build_prompt(query, docs, metas):
+    context = ""
+    for m, d in zip(metas, docs):
+        context += f"[{m['index']}] {d} \n\n"
+    return (
+        "You are a retrieval-grounded assistant. "
+        "Use only the notes provided. Answer concisely. "
+        "If information is missing, respond: I don't know.\n\n"
+        f"Notes:\n{context}\n"
+        f"User: {query}\n"
+        "Assistant:"
+    )
+
+
+def ask(query):
     res = retrieve(query)
     docs = res["documents"]
     metas = res["metadatas"]
-    context = "\n\n".join([f"[{m['index']}] {d}" for m, d in zip(metas, docs)])
-    prompt = f"Use the notes below to answer the user. If answer unknown, say 'I don't know'.\n\nNotes:\n{
-        context
-    }\n\nUser: {query}\nAssistant:"
-    resp = openai.ChatCompletion.create(
-        model="gpt-4o-mini", messages=[{"role": "user", "content": prompt}]
-    )
-    return resp["choices"][0]["message"]["content"]
+    prompt = build_prompt(query, docs, metas)
+    response = generate(prompt)
+    print(f"Response received :: {response}")
+    return response
 
 
 if __name__ == "__main__":
-    q = "What smell is there?"
-    print(ask_rag(q))
+    ask("What is the smell of?")
